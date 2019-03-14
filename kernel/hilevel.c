@@ -76,28 +76,50 @@ void hilevel_handler_rst(ctx_t* ctx) {
    * - enabling IRQ interrupts.
    */
   
-  memset( &pcb[ 0 ], 0, sizeof( pcb_t ) );     // initialise 0-th PCB = P_1
-  pcb[ 0 ].pid      = 3;
-  pcb[ 0 ].status   = STATUS_CREATED;
-  pcb[ 0 ].ctx.cpsr = 0x50;
-  pcb[ 0 ].ctx.pc   = ( uint32_t )( &main_P3 );
-  pcb[ 0 ].ctx.sp   = ( uint32_t )( &tos_P3  );
+//   memset( &pcb[ 0 ], 0, sizeof( pcb_t ) );     // initialise 0-th PCB = P_1
+//   pcb[ 0 ].pid      = 3;
+//   pcb[ 0 ].status   = STATUS_CREATED;
+//   pcb[ 0 ].ctx.cpsr = 0x50;
+//   pcb[ 0 ].ctx.pc   = ( uint32_t )( &main_P3 );
+//   pcb[ 0 ].ctx.sp   = ( uint32_t )( &tos_P3  );
 
-  memset( &pcb[ 1 ], 0, sizeof( pcb_t ) );     // initialise 1-st PCB = P_2
-  pcb[ 1 ].pid      = 4;
-  pcb[ 1 ].status   = STATUS_CREATED;
-  pcb[ 1 ].ctx.cpsr = 0x50;
-  pcb[ 1 ].ctx.pc   = ( uint32_t )( &main_P4 );
-  pcb[ 1 ].ctx.sp   = ( uint32_t )( &tos_P4  );
+//   memset( &pcb[ 1 ], 0, sizeof( pcb_t ) );     // initialise 1-st PCB = P_2
+//   pcb[ 1 ].pid      = 4;
+//   pcb[ 1 ].status   = STATUS_CREATED;
+//   pcb[ 1 ].ctx.cpsr = 0x50;
+//   pcb[ 1 ].ctx.pc   = ( uint32_t )( &main_P4 );
+//   pcb[ 1 ].ctx.sp   = ( uint32_t )( &tos_P4  );
   
    
-  memset( &pcb[ 2 ], 0, sizeof( pcb_t ) );   //initialise 1-st PCB = P_3
-  pcb[ 2 ].pid      = 5;
-  pcb[ 2 ].status   = STATUS_CREATED;
-  pcb[ 2 ].ctx.cpsr = 0x50;
-  pcb[ 2 ].ctx.pc   = ( uint32_t )( &main_P5 );
-  pcb[ 2 ].ctx.sp   = ( uint32_t )( &tos_P5  );
-  dispatch( ctx, NULL, &pcb[ 0 ] );
+//   memset( &pcb[ 2 ], 0, sizeof( pcb_t ) );   //initialise 1-st PCB = P_3
+//   pcb[ 2 ].pid      = 5;
+//   pcb[ 2 ].status   = STATUS_CREATED;
+//   pcb[ 2 ].ctx.cpsr = 0x50;
+//   pcb[ 2 ].ctx.pc   = ( uint32_t )( &main_P5 );
+//   pcb[ 2 ].ctx.sp   = ( uint32_t )( &tos_P5  );
+//   dispatch( ctx, NULL, &pcb[ 0 ] );
+//   
+  for (int i=0;i<sizeof(pcb_t);i++){
+      memset(&pcb[i],i,sizeof(pcb_t));
+      pcb[i].pid = i+3;
+      pcb[i].status = STATUS_CREATED;
+      pcb[i].ctx.cpsr=0x50;
+      if (i == 0){
+      pcb[i].ctx.pc= (uint32_t)(&main_P3);
+      pcb[i].ctx.sp=(uint32_t)(&tos_P3);
+ 
+      }
+      if (i == 1){
+      pcb[i].ctx.pc= (uint32_t)(&main_P4);
+      pcb[i].ctx.sp=(uint32_t)(&tos_P4);
+    }
+       if (i == 2){
+      pcb[i].ctx.pc= (uint32_t)(&main_P5);
+      pcb[i].ctx.sp=(uint32_t)(&tos_P5);
+      dispatch(ctx,NULL,&pcb[0]);
+ 
+      }
+  }
 
   TIMER0->Timer1Load  = 0x00100000; // select period = 2^20 ticks ~= 1 sec
   TIMER0->Timer1Ctrl  = 0x00000002; // select 32-bit   timer
