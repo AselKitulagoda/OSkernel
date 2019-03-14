@@ -10,7 +10,7 @@
 //Coursework 
 
 
-pcb_t pcb[ 2 ]; pcb_t* current = NULL;
+pcb_t pcb[ 3 ]; pcb_t* current = NULL;
 
 void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
   char prev_pid = '?', next_pid = '?';
@@ -37,24 +37,36 @@ void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
 }
 
 void schedule( ctx_t* ctx ) {
-  if     ( current->pid == pcb[ 0 ].pid ) {
-    dispatch( ctx, &pcb[ 0 ], &pcb[ 1 ] );      // context switch P_1 -> P_
+//   if     ( current->pid == pcb[ 0 ].pid ) {
+//     dispatch( ctx, &pcb[ 0 ], &pcb[ 1 ] );      // context switch P_1 -> P_
 
-    pcb[ 0 ].status = STATUS_READY;             // update   execution status  of P_1 
-    pcb[ 1 ].status = STATUS_EXECUTING;         // update   execution status  of P_2
-  }
-  else if( current->pid == pcb[ 1 ].pid ) {
-    dispatch( ctx, &pcb[ 1 ], &pcb[ 2 ] );      // context switch P_2 -> P_3
+//     pcb[ 0 ].status = STATUS_READY;             // update   execution status  of P_1 
+//     pcb[ 1 ].status = STATUS_EXECUTING;         // update   execution status  of P_2
+//   }
+//   else if( current->pid == pcb[ 1 ].pid ) {
+//     dispatch( ctx, &pcb[ 1 ], &pcb[ 2 ] );      // context switch P_2 -> P_3
 
-    pcb[ 1 ].status = STATUS_READY;             // update   execution status  of P_2
-    pcb[ 2 ].status = STATUS_EXECUTING;         // update   execution status  of P_1
-  }
-  else if( current->pid == pcb[ 2 ].pid ) {
-    dispatch( ctx, &pcb[ 2 ], &pcb[ 0 ] );      // context switch P_3 -> P_1
+//     pcb[ 1 ].status = STATUS_READY;             // update   execution status  of P_2
+//     pcb[ 2 ].status = STATUS_EXECUTING;         // update   execution status  of P_1
+//   }
+//   else if( current->pid == pcb[ 2 ].pid ) {
+//     dispatch( ctx, &pcb[ 2 ], &pcb[ 0 ] );      // context switch P_3 -> P_1
 
-    pcb[ 2 ].status = STATUS_READY;             // update   execution status  of P_2
-    pcb[ 0 ].status = STATUS_EXECUTING;         // update   execution status  of P_1
-  }
+//     pcb[ 2 ].status = STATUS_READY;             // update   execution status  of P_2
+//     pcb[ 0 ].status = STATUS_EXECUTING;         // update   execution status  of P_1
+//   }
+//   int length = 
+    int length  = sizeof(pcb)/sizeof(pcb[0]);
+    char test = '0' + length;
+    for (int i=0;i<length;i++){
+        PL011_putc( UART0, test, true );
+        if (current->pid == pcb[i].pid){
+            dispatch(ctx,&pcb[i],&pcb[(i+1)%length]);
+            pcb[i].status = STATUS_READY;
+            pcb[(i+1)%length].status = STATUS_EXECUTING;
+            break;
+        }
+    }
 
   return;
 }
@@ -76,50 +88,47 @@ void hilevel_handler_rst(ctx_t* ctx) {
    * - enabling IRQ interrupts.
    */
   
-//   memset( &pcb[ 0 ], 0, sizeof( pcb_t ) );     // initialise 0-th PCB = P_1
-//   pcb[ 0 ].pid      = 3;
-//   pcb[ 0 ].status   = STATUS_CREATED;
-//   pcb[ 0 ].ctx.cpsr = 0x50;
-//   pcb[ 0 ].ctx.pc   = ( uint32_t )( &main_P3 );
-//   pcb[ 0 ].ctx.sp   = ( uint32_t )( &tos_P3  );
+//   for (int i=0;i<sizeof(pcb_t);i++){
+//       memset(&pcb[i],i,sizeof(pcb_t));
+//       pcb[i].pid = i+3;
+//       pcb[i].status = STATUS_CREATED;
+//       pcb[i].ctx.cpsr=0x50;
+//       if (i == 0){
+//       pcb[i].ctx.pc= (uint32_t)(&main_P3);
+//       pcb[i].ctx.sp=(uint32_t)(&tos_P3);
+ 
+//       }
+//       if (i == 1){
+//       pcb[i].ctx.pc= (uint32_t)(&main_P4);
+//       pcb[i].ctx.sp=(uint32_t)(&tos_P4);
+//     }
+//        if (i == 2){
+//       pcb[i].ctx.pc= (uint32_t)(&main_P5);
+//       pcb[i].ctx.sp=(uint32_t)(&tos_P5);
+//       dispatch(ctx,NULL,&pcb[0]);
+//       }
+//   }
+    memset( &pcb[ 0 ], 0, sizeof( pcb_t ) );     // initialise 0-th PCB = P_1
+  pcb[ 0 ].pid      = 3;
+  pcb[ 0 ].status   = STATUS_CREATED;
+  pcb[ 0 ].ctx.cpsr = 0x50;
+  pcb[ 0 ].ctx.pc   = ( uint32_t )( &main_P3 );
+  pcb[ 0 ].ctx.sp   = ( uint32_t )( &tos_P3  );
 
-//   memset( &pcb[ 1 ], 0, sizeof( pcb_t ) );     // initialise 1-st PCB = P_2
-//   pcb[ 1 ].pid      = 4;
-//   pcb[ 1 ].status   = STATUS_CREATED;
-//   pcb[ 1 ].ctx.cpsr = 0x50;
-//   pcb[ 1 ].ctx.pc   = ( uint32_t )( &main_P4 );
-//   pcb[ 1 ].ctx.sp   = ( uint32_t )( &tos_P4  );
-  
-   
-//   memset( &pcb[ 2 ], 0, sizeof( pcb_t ) );   //initialise 1-st PCB = P_3
-//   pcb[ 2 ].pid      = 5;
-//   pcb[ 2 ].status   = STATUS_CREATED;
-//   pcb[ 2 ].ctx.cpsr = 0x50;
-//   pcb[ 2 ].ctx.pc   = ( uint32_t )( &main_P5 );
-//   pcb[ 2 ].ctx.sp   = ( uint32_t )( &tos_P5  );
-//   dispatch( ctx, NULL, &pcb[ 0 ] );
-//   
-  for (int i=0;i<sizeof(pcb_t);i++){
-      memset(&pcb[i],i,sizeof(pcb_t));
-      pcb[i].pid = i+3;
-      pcb[i].status = STATUS_CREATED;
-      pcb[i].ctx.cpsr=0x50;
-      if (i == 0){
-      pcb[i].ctx.pc= (uint32_t)(&main_P3);
-      pcb[i].ctx.sp=(uint32_t)(&tos_P3);
- 
-      }
-      if (i == 1){
-      pcb[i].ctx.pc= (uint32_t)(&main_P4);
-      pcb[i].ctx.sp=(uint32_t)(&tos_P4);
-    }
-       if (i == 2){
-      pcb[i].ctx.pc= (uint32_t)(&main_P5);
-      pcb[i].ctx.sp=(uint32_t)(&tos_P5);
-      dispatch(ctx,NULL,&pcb[0]);
- 
-      }
-  }
+  memset( &pcb[ 1 ], 0, sizeof( pcb_t ) );     // initialise 1-st PCB = P_2
+  pcb[ 1 ].pid      = 4;
+  pcb[ 1 ].status   = STATUS_CREATED;
+  pcb[ 1 ].ctx.cpsr = 0x50;
+  pcb[ 1 ].ctx.pc   = ( uint32_t )( &main_P4 );
+  pcb[ 1 ].ctx.sp   = ( uint32_t )( &tos_P4  );
+    
+   memset( &pcb[ 2 ], 0, sizeof( pcb_t ) );     // initialise 1-st PCB = P_2
+  pcb[ 2 ].pid      = 5;
+  pcb[ 2 ].status   = STATUS_CREATED;
+  pcb[ 2 ].ctx.cpsr = 0x50;
+  pcb[ 2 ].ctx.pc   = ( uint32_t )( &main_P5 );
+  pcb[ 2 ].ctx.sp   = ( uint32_t )( &tos_P5  );
+
 
   TIMER0->Timer1Load  = 0x00100000; // select period = 2^20 ticks ~= 1 sec
   TIMER0->Timer1Ctrl  = 0x00000002; // select 32-bit   timer
@@ -137,7 +146,7 @@ void hilevel_handler_rst(ctx_t* ctx) {
    * since it is is invalid on reset (i.e., no process will previously have
    * been executing).
    */
-
+  dispatch( ctx, NULL, &pcb[ 0 ] );
   int_enable_irq();
 
   return;
@@ -151,8 +160,9 @@ void hilevel_handler_irq(ctx_t* ctx) {
   // Step 4: handle the interrupt, then clear (or reset) the source.
 
   if( id == GIC_SOURCE_TIMER0 ) {
+//       PL011_putc( UART0, 'T', true );
     schedule(ctx);
-    PL011_putc( UART0, 'T', true ); TIMER0->Timer1IntClr = 0x01;
+     TIMER0->Timer1IntClr = 0x01;
   }
 
   // Step 5: write the interrupt identifier to signal we're done.
