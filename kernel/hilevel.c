@@ -65,14 +65,13 @@ void schedule( ctx_t* ctx ) {
 //     }
 // 
        int arghighestpri = findmax();
-       PL011_putc(UART0, '0' + arghighestpri, true);
        dispatch(ctx,current,&pcb[(arghighestpri)]);
        current->status = STATUS_READY;
        pcb[arghighestpri].status=STATUS_EXECUTING;
        current->priority = current->initialpriority;
    for (int i =0;i<length;i++){
        if (pcb[i].pid != current->pid){
-           pcb[i].priority+=5;
+           pcb[i].priority+=pcb[i].prioritychange;
        }
    }
 
@@ -127,8 +126,9 @@ void hilevel_handler_rst(ctx_t* ctx) {
   pcb[ 0 ].status   = STATUS_CREATED;
   pcb[ 0 ].ctx.cpsr = 0x50;
   pcb[ 0 ].ctx.pc   = ( uint32_t )( &main_P3 );
-  pcb[ 0 ].priority = 10;
-  pcb[ 0 ].initialpriority = 10;
+  pcb[ 0 ].priority = 20;
+  pcb[ 0 ].initialpriority = 20;
+  pcb[0].prioritychange = 5;
   pcb[ 0 ].ctx.sp   = ( uint32_t )( &tos_P3  );
 
   memset( &pcb[ 1 ], 0, sizeof( pcb_t ) );     // initialise 1-st PCB = P_2
@@ -136,8 +136,9 @@ void hilevel_handler_rst(ctx_t* ctx) {
   pcb[ 1 ].status   = STATUS_CREATED;
   pcb[ 1 ].ctx.cpsr = 0x50;
   pcb[ 1 ].ctx.pc   = ( uint32_t )( &main_P4 );
-  pcb[1].priority = 15;
-  pcb[1].initialpriority = 15;
+  pcb[1].priority = 20;
+  pcb[1].initialpriority = 20;
+  pcb[1].prioritychange = 10;
   pcb[ 1 ].ctx.sp   = ( uint32_t )( &tos_P4  );
     
    memset( &pcb[ 2 ], 0, sizeof( pcb_t ) );     // initialise 1-st PCB = P_2
@@ -145,8 +146,9 @@ void hilevel_handler_rst(ctx_t* ctx) {
   pcb[ 2 ].status   = STATUS_CREATED;
   pcb[ 2 ].ctx.cpsr = 0x50;
   pcb[ 2 ].ctx.pc   = ( uint32_t )( &main_P5 );
-  pcb[2].priority = 20;
-  pcb[2].initialpriority = 20;
+  pcb[2].priority = 30;
+  pcb[2].initialpriority = 30;
+  pcb[0].prioritychange = 1;
   pcb[ 2 ].ctx.sp   = ( uint32_t )( &tos_P5  );
 
 
@@ -166,7 +168,7 @@ void hilevel_handler_rst(ctx_t* ctx) {
    * since it is is invalid on reset (i.e., no process will previously have
    * been executing).
    */
-  dispatch( ctx, NULL, &pcb[ 0 ] );
+  dispatch( ctx, NULL, &pcb[ findmax() ] );
   int_enable_irq();
 
   return;
