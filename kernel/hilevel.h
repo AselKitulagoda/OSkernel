@@ -45,5 +45,8 @@ typedef struct {
 typedef struct {
      pid_t    pid;
   status_t status;
+    int priority;
+    int initialpriority;
+    int prioritychange;
      ctx_t    ctx;
 } pcb_t;

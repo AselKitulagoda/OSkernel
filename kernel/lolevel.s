@@ -57,9 +57,13 @@ lolevel_handler_irq: sub   lr, lr, #4              @ correct return address
                      mrs   r0, spsr                @ move     USR        CPSR
                      stmdb sp!, { r0, lr }         @ store    USR PC and CPSR
          
+                    
                      mov   r0, sp                  @ set    high-level C function arg. = SP
-                     bl    hilevel_handler_irq     @ invoke high-level C function
-        
+                     ldr   r1, [ lr, #-4 ]         @ load                     svc instruction
+                     bic   r1, r1, #0xFF000000     @ set    high-level C function arg. = svc immediate
+                     bl    hilevel_handler_irq     @ invoke high-level C functio
+                     
+                     
                      ldmia sp!, { r0, lr }         @ load     USR mode PC and CPSR
                      msr   spsr, r0                @ move     USR mode        CPSR
                      ldmia sp, { r0-r12, sp, lr }^ @ restore  USR mode registers

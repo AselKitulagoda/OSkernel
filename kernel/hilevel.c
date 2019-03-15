@@ -10,7 +10,7 @@
 //Coursework 
 
 
-pcb_t pcb[ 3 ]; pcb_t* current = NULL;
+pcb_t pcb[ 3 ]; pcb_t* current = NULL;pcb_t* prev = NULL;pcb_t* next = NULL;
 
 void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
   char prev_pid = '?', next_pid = '?';
@@ -36,40 +36,51 @@ void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
   return;
 }
 
+int findmax(){
+    int length  = sizeof(pcb)/sizeof(pcb[0]);
+    int currenthighest = -1;
+    int highestindex = -5;
+    for (int i=0;i<length;i++){
+        if ((pcb[i].priority>currenthighest) && pcb[i].status!=STATUS_TERMINATED){
+        currenthighest = pcb[i].priority;
+        highestindex = i;
+}
+}
+    return highestindex;
+}
+
+
 void schedule( ctx_t* ctx ) {
-//   if     ( current->pid == pcb[ 0 ].pid ) {
-//     dispatch( ctx, &pcb[ 0 ], &pcb[ 1 ] );      // context switch P_1 -> P_
-
-//     pcb[ 0 ].status = STATUS_READY;             // update   execution status  of P_1 
-//     pcb[ 1 ].status = STATUS_EXECUTING;         // update   execution status  of P_2
-//   }
-//   else if( current->pid == pcb[ 1 ].pid ) {
-//     dispatch( ctx, &pcb[ 1 ], &pcb[ 2 ] );      // context switch P_2 -> P_3
-
-//     pcb[ 1 ].status = STATUS_READY;             // update   execution status  of P_2
-//     pcb[ 2 ].status = STATUS_EXECUTING;         // update   execution status  of P_1
-//   }
-//   else if( current->pid == pcb[ 2 ].pid ) {
-//     dispatch( ctx, &pcb[ 2 ], &pcb[ 0 ] );      // context switch P_3 -> P_1
-
-//     pcb[ 2 ].status = STATUS_READY;             // update   execution status  of P_2
-//     pcb[ 0 ].status = STATUS_EXECUTING;         // update   execution status  of P_1
-//   }
-//   int length = 
     int length  = sizeof(pcb)/sizeof(pcb[0]);
     char test = '0' + length;
-    for (int i=0;i<length;i++){
-        PL011_putc( UART0, test, true );
-        if (current->pid == pcb[i].pid){
-            dispatch(ctx,&pcb[i],&pcb[(i+1)%length]);
-            pcb[i].status = STATUS_READY;
-            pcb[(i+1)%length].status = STATUS_EXECUTING;
-            break;
-        }
-    }
+//     for (int i=0;i<length;i++){
+//         PL011_putc( UART0, test, true );
+//         if (current->pid == pcb[i].pid){
+//             dispatch(ctx,&pcb[i],&pcb[(i+1)%length]);
+//             pcb[i].status = STATUS_READY;
+//             pcb[(i+1)%length].status = STATUS_EXECUTING;
+//             break;
+//         }
+//         
+//     }
+// 
+       int arghighestpri = findmax();
+       PL011_putc(UART0, '0' + arghighestpri, true);
+       dispatch(ctx,current,&pcb[(arghighestpri)]);
+       current->status = STATUS_READY;
+       pcb[arghighestpri].status=STATUS_EXECUTING;
+       current->priority = current->initialpriority;
+   for (int i =0;i<length;i++){
+       if (pcb[i].pid != current->pid){
+           pcb[i].priority+=5;
+       }
+   }
+
 
   return;
 }
+
+
 
 extern void     main_P3(); 
 extern uint32_t tos_P3;
@@ -108,11 +119,16 @@ void hilevel_handler_rst(ctx_t* ctx) {
 //       dispatch(ctx,NULL,&pcb[0]);
 //       }
 //   }
-    memset( &pcb[ 0 ], 0, sizeof( pcb_t ) );     // initialise 0-th PCB = P_1
+//  
+//   
+  PL011_putc(UART0,'R',true);
+  memset( &pcb[ 0 ], 0, sizeof( pcb_t ) );     // initialise 0-th PCB = P_1
   pcb[ 0 ].pid      = 3;
   pcb[ 0 ].status   = STATUS_CREATED;
   pcb[ 0 ].ctx.cpsr = 0x50;
   pcb[ 0 ].ctx.pc   = ( uint32_t )( &main_P3 );
+  pcb[ 0 ].priority = 10;
+  pcb[ 0 ].initialpriority = 10;
   pcb[ 0 ].ctx.sp   = ( uint32_t )( &tos_P3  );
 
   memset( &pcb[ 1 ], 0, sizeof( pcb_t ) );     // initialise 1-st PCB = P_2
@@ -120,6 +136,8 @@ void hilevel_handler_rst(ctx_t* ctx) {
   pcb[ 1 ].status   = STATUS_CREATED;
   pcb[ 1 ].ctx.cpsr = 0x50;
   pcb[ 1 ].ctx.pc   = ( uint32_t )( &main_P4 );
+  pcb[1].priority = 15;
+  pcb[1].initialpriority = 15;
   pcb[ 1 ].ctx.sp   = ( uint32_t )( &tos_P4  );
     
    memset( &pcb[ 2 ], 0, sizeof( pcb_t ) );     // initialise 1-st PCB = P_2
@@ -127,6 +145,8 @@ void hilevel_handler_rst(ctx_t* ctx) {
   pcb[ 2 ].status   = STATUS_CREATED;
   pcb[ 2 ].ctx.cpsr = 0x50;
   pcb[ 2 ].ctx.pc   = ( uint32_t )( &main_P5 );
+  pcb[2].priority = 20;
+  pcb[2].initialpriority = 20;
   pcb[ 2 ].ctx.sp   = ( uint32_t )( &tos_P5  );
 
 
@@ -201,6 +221,10 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
 
       break;
     }
+      case 0x04:{
+          current->status = STATUS_TERMINATED;
+          schedule(ctx);
+      }
 
     default   : { // 0x?? => unknown/unsupported
       break;
