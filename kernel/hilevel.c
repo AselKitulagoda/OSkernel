@@ -10,7 +10,11 @@
 //Coursework 
 
 
-pcb_t pcb[ 3 ]; pcb_t* current = NULL;pcb_t* prev = NULL;pcb_t* next = NULL;
+pcb_t pcb[ 4 ]; pcb_t* current = NULL;pcb_t* prev = NULL;pcb_t* next = NULL;
+
+
+
+
 
 void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
   char prev_pid = '?', next_pid = '?';
@@ -87,6 +91,8 @@ extern void     main_P4();
 extern uint32_t tos_P4;
 extern void     main_P5(); 
 extern uint32_t tos_P5;
+extern void main_console();
+extern uint32_t tos_console;
 
 void hilevel_handler_rst(ctx_t* ctx) {
   /* Configure the mechanism for interrupt handling by
@@ -125,31 +131,42 @@ void hilevel_handler_rst(ctx_t* ctx) {
   pcb[ 0 ].pid      = 3;
   pcb[ 0 ].status   = STATUS_CREATED;
   pcb[ 0 ].ctx.cpsr = 0x50;
-  pcb[ 0 ].ctx.pc   = ( uint32_t )( &main_P3 );
+  pcb[ 0 ].ctx.pc   = ( uint32_t )( &main_console );
   pcb[ 0 ].priority = 20;
   pcb[ 0 ].initialpriority = 20;
   pcb[0].prioritychange = 5;
-  pcb[ 0 ].ctx.sp   = ( uint32_t )( &tos_P3  );
+  pcb[ 0 ].ctx.sp   = ( uint32_t )( &tos_console  );
 
-  memset( &pcb[ 1 ], 0, sizeof( pcb_t ) );     // initialise 1-st PCB = P_2
-  pcb[ 1 ].pid      = 4;
-  pcb[ 1 ].status   = STATUS_CREATED;
-  pcb[ 1 ].ctx.cpsr = 0x50;
-  pcb[ 1 ].ctx.pc   = ( uint32_t )( &main_P4 );
-  pcb[1].priority = 20;
-  pcb[1].initialpriority = 20;
-  pcb[1].prioritychange = 10;
-  pcb[ 1 ].ctx.sp   = ( uint32_t )( &tos_P4  );
+//   memset( &pcb[ 1 ], 0, sizeof( pcb_t ) );     // initialise 1-st PCB = P_2
+//   pcb[ 1 ].pid      = 4;
+//   pcb[ 1 ].status   = STATUS_CREATED;
+//   pcb[ 1 ].ctx.cpsr = 0x50;
+//   pcb[ 1 ].ctx.pc   = ( uint32_t )( &main_P4 );
+//   pcb[1].priority = 20;
+//   pcb[1].initialpriority = 20;
+//   pcb[1].prioritychange = 10;
+//   pcb[ 1 ].ctx.sp   = ( uint32_t )( &tos_P4  );
     
-   memset( &pcb[ 2 ], 0, sizeof( pcb_t ) );     // initialise 1-st PCB = P_2
-  pcb[ 2 ].pid      = 5;
-  pcb[ 2 ].status   = STATUS_CREATED;
-  pcb[ 2 ].ctx.cpsr = 0x50;
-  pcb[ 2 ].ctx.pc   = ( uint32_t )( &main_P5 );
-  pcb[2].priority = 30;
-  pcb[2].initialpriority = 30;
-  pcb[0].prioritychange = 1;
-  pcb[ 2 ].ctx.sp   = ( uint32_t )( &tos_P5  );
+//    memset( &pcb[ 2 ], 0, sizeof( pcb_t ) );     // initialise 1-st PCB = P_2
+//   pcb[ 2 ].pid      = 5;
+//   pcb[ 2 ].status   = STATUS_CREATED;
+//   pcb[ 2 ].ctx.cpsr = 0x50;
+//   pcb[ 2 ].ctx.pc   = ( uint32_t )( &main_P5 );
+//   pcb[2].priority = 30;
+//   pcb[2].initialpriority = 30;
+//   pcb[2].prioritychange = 1;
+//   pcb[ 2 ].ctx.sp   = ( uint32_t )( &tos_P5  );
+    
+//   pcb[ 2 ].pid      = 5;
+//   pcb[ 2 ].status   = STATUS_CREATED;
+//   pcb[ 2 ].ctx.cpsr = 0x50;
+//   pcb[ 2 ].ctx.pc   = ( uint32_t )( &main_console );
+//   pcb[2].priority = 30;
+//   pcb[2].initialpriority = 30;
+//   pcb[0].prioritychange = 1;
+//   pcb[ 2 ].ctx.sp   = ( uint32_t )( &tos_console  );
+    
+  
 
 
   TIMER0->Timer1Load  = 0x00100000; // select period = 2^20 ticks ~= 1 sec
@@ -194,6 +211,8 @@ void hilevel_handler_irq(ctx_t* ctx) {
   return;
 }
 
+
+
 void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) { 
   /* Based on the identifier (i.e., the immediate operand) extracted from the
    * svc instruction, 
@@ -226,6 +245,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       case 0x04:{
           current->status = STATUS_TERMINATED;
           schedule(ctx);
+          break;
       }
 
     default   : { // 0x?? => unknown/unsupported
