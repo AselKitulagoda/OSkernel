@@ -13,7 +13,7 @@
 
 
 pcb_t pcb[ 4 ]; pcb_t* current = NULL;pcb_t* prev = NULL;pcb_t* next = NULL;
-int processesRunning=0; uint32_t toTos[3]; int currentlyExecuting=0;
+int processesRunning=0; uint32_t toTos[4]; int currentlyExecuting=0;
 
 
 
@@ -103,13 +103,13 @@ extern uint32_t tos_console;
 uint32_t findtos(int i){
   uint32_t tos = 0;
   if (i==2){
-    tos = tos_P4;
+    tos = (uint32_t)&tos_P4;
   }
   else if (i==3){
-    tos = tos_P5;
+    tos = (uint32_t)&tos_P5;
   }
   else if (i==1){
-    tos = tos_P3;
+    tos = (uint32_t)&tos_P3;
   }
   toTos[i]=tos;
   return tos;
@@ -281,7 +281,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       pcb[processesRunning].status = pcb[currentlyExecuting].status;
       pcb[processesRunning].ctx.cpsr = ctx->cpsr; //new
       toTos[processesRunning] = (uint32_t) findtos(processesRunning);
-      uint32_t offset = (uint32_t) findtos(currentlyExecuting) - ctx->sp;
+      uint32_t offset = (uint32_t) toTos[currentlyExecuting] - ctx->sp;
       memcpy((void*)(toTos[processesRunning]-offset),(void*)(toTos[currentlyExecuting]-offset),offset);
       pcb[processesRunning].ctx.sp = (uint32_t) toTos[processesRunning]-offset;
       setpri(processesRunning);
