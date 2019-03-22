@@ -12,8 +12,8 @@
 //Coursework
 
 
-pcb_t pcb[ 4 ]; pcb_t* current = NULL;pcb_t* prev = NULL;pcb_t* next = NULL;
-int processesRunning=0; uint32_t toTos[4]; int currentlyExecuting=0;
+pcb_t pcb[ 1000 ]; pcb_t* current = NULL;pcb_t* prev = NULL;pcb_t* next = NULL;
+int processesRunning=0; uint32_t toTos[1000]; int currentlyExecuting=0;
 
 
 
@@ -279,11 +279,12 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       memcpy(&pcb[processesRunning].ctx,ctx,sizeof(ctx_t));
       pcb[processesRunning].pid = processesRunning;
       pcb[processesRunning].status = pcb[currentlyExecuting].status;
-      pcb[processesRunning].ctx.cpsr = ctx->cpsr; //new
-      toTos[processesRunning] = (uint32_t) findtos(processesRunning);
-      uint32_t offset = (uint32_t) toTos[currentlyExecuting] - ctx->sp;
-      memcpy((void*)(toTos[processesRunning]-offset),(void*)(toTos[currentlyExecuting]-offset),offset);
-      pcb[processesRunning].ctx.sp = (uint32_t) toTos[processesRunning]-offset;
+      pcb[processesRunning].ctx.cpsr = ctx->cpsr;
+      if (processesRunning !=1000){
+              toTos[processesRunning] = toTos[currentlyExecuting] + 0x00001000;
+      }
+      uint32_t offset = toTos[currentlyExecuting] - ctx->sp;
+      pcb[processesRunning].ctx.sp =  toTos[processesRunning]-offset;
       setpri(processesRunning);
       pcb[processesRunning].ctx.gpr[0]=0;
       ctx->gpr[0] = processesRunning;
@@ -298,10 +299,8 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       }
 
       case 0x05:{
-
-        void* execPid = (void*) ctx->gpr[0];
         ctx->sp = toTos[currentlyExecuting];
-        ctx->pc = (uint32_t) execPid;
+        ctx->pc = ctx->gpr[0];
         break;
       }
 
