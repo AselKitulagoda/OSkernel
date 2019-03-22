@@ -304,6 +304,11 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
         break;
       }
 
+      case 0x06:{
+        int id  = ctx->gpr[0];
+        pcb[id].status = STATUS_TERMINATED;
+      }
+
     default   : { // 0x?? => unknown/unsupported
       break;
     }
