@@ -91,10 +91,11 @@ void main_console() {
     puts( "shell$ ", 7 ); gets( x, 1024 ); p = strtok( x, " " );
 
     if     ( 0 == strcmp( p, "execute"   ) ) {
+      char *program = strtok(NULL, " ");
       pid_t pid = fork();
 
       if( 0 == pid ) {
-        exec( load( strtok( NULL, " " ) ) );
+        exec( load( program ) );
       }
     } 
     else if( 0 == strcmp( p, "terminate" ) ) {

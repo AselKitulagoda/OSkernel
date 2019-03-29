@@ -160,12 +160,12 @@ void hilevel_handler_rst(ctx_t* ctx) {
   pcb[ 0 ].status   = STATUS_READY;
   pcb[ 0 ].ctx.cpsr = 0x50;
   pcb[ 0 ].ctx.pc   = ( uint32_t )( &main_console );
-  pcb[ 0 ].priority = 20;
-  pcb[ 0 ].initialpriority = 20;
+  pcb[ 0 ].priority = 25;
+  pcb[ 0 ].initialpriority = 40;
   pcb[0].prioritychange = 5;
   pcb[ 0 ].ctx.sp   = ( uint32_t )( &tos_console  );
 
-  toTos[0] = (uint32_t)&tos_console;
+//   toTos[0] = (uint32_t)&tos_console;
 
 //   memset( &pcb[ 1 ], 0, sizeof( pcb_t ) );     // initialise 1-st PCB = P_2
 //   pcb[ 1 ].pid      = 4;
@@ -243,6 +243,13 @@ void hilevel_handler_irq(ctx_t* ctx) {
 }
 
 
+void print(char* str){
+    for (int i=0;i<strlen(str);i++){
+        PL011_putc(UART0,str[i],true);
+    }
+}
+
+
 
 void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
   /* Based on the identifier (i.e., the immediate operand) extracted from the
@@ -274,18 +281,18 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       break;
     }
     case 0x03:{
+//       print("FORK");
       processesRunning +=1;
       memset(&pcb[processesRunning],0,sizeof(pcb_t));
+      //creates child console
       memcpy(&pcb[processesRunning].ctx,ctx,sizeof(ctx_t));
       pcb[processesRunning].pid = processesRunning;
-      pcb[processesRunning].status = pcb[currentlyExecuting].status;
+      pcb[processesRunning].status = STATUS_CREATED;
       pcb[processesRunning].ctx.cpsr = ctx->cpsr;
-      if (processesRunning !=1000){
-              toTos[processesRunning] = toTos[currentlyExecuting] + 0x00001000;
-      }
-      uint32_t offset = toTos[currentlyExecuting] - ctx->sp;
-      pcb[processesRunning].ctx.sp =  toTos[processesRunning]-offset;
+      pcb[processesRunning].ctx.sp = (uint32_t) &tos_console + processesRunning*0x00001000;
       setpri(processesRunning);
+      uint32_t currentsp = (uint32_t)&tos_console + current->pid*0x00001000;
+      memcpy((void *) pcb[processesRunning].ctx.sp - 0x00001000, (void *) currentsp - 0x00001000, 0x00001000);
       pcb[processesRunning].ctx.gpr[0]=0;
       ctx->gpr[0] = processesRunning;
       break;
@@ -293,18 +300,22 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
 
     }
       case 0x04:{
+//           print("EXIT");
           current->status = STATUS_TERMINATED;
           schedule(ctx);
           break;
       }
 
       case 0x05:{
-        ctx->sp = toTos[currentlyExecuting];
+//         print("EXEC");
         ctx->pc = ctx->gpr[0];
+        ctx->sp = (uint32_t) &tos_console + processesRunning*0x00001000;
+
         break;
       }
 
       case 0x06:{
+//         print("KILL");
         int id  = ctx->gpr[0];
         pcb[id].status = STATUS_TERMINATED;
       }
