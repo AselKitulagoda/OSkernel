@@ -8,6 +8,7 @@
 #ifndef __LIBC_H
 #define __LIBC_H
 
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -38,12 +39,10 @@ typedef int pid_t;
 #define SYS_EXEC      ( 0x05 )
 #define SYS_KILL      ( 0x06 )
 #define SYS_NICE      ( 0x07 )
-#define SYS_CHWRITE   (0x08)
-#define SYS_CHREAD    (0x09)
-#define SYS_PIPE      (0x10)
-#define SYS_OPEN      (0x11)
-#define SYS_CLOSE     (0x12)
-#define SYS_ID         (0x13)
+#define SYS_SEMINIT   (0X08)  
+#define SYS_SEMWAIT   (0x09)
+#define SYS_SEMPOST    (0x10)
+#define SYS_SEMDESTROY (0x11)
 
 #define SIG_TERM      ( 0x00 )
 #define SIG_QUIT      ( 0x01 )
@@ -54,6 +53,9 @@ typedef int pid_t;
 #define  STDIN_FILENO ( 0 )
 #define STDOUT_FILENO ( 1 )
 #define STDERR_FILENO ( 2 )
+
+typedef int sem_t;
+
 
 // convert ASCII string x into integer r
 extern int  atoi( char* x        );
@@ -80,10 +82,18 @@ extern int  kill( pid_t pid, int x );
 // for process identified by pid, set  priority to x
 extern void nice( pid_t pid, int x );
 
-extern int chanWrite(int fd,int x,int phid);
-extern int chanRead (int fd,int id);
-extern int pipe (int fd,int block,int pid_a, int pid_b);
-extern int open(int fd,int id);
-extern int id();
+extern void sem_init(sem_t* s);
+extern void sem_wait(sem_t *s);
+extern void sem_post(sem_t *s);
+extern void sem_destroy(sem_t *s);
+
+
+// extern int chanWrite(int fd,int x,int phid);
+// extern int chanRead (int fd,int id);
+// extern int pipe (int fd,int block,int pid_a, int pid_b);
+// extern int open(int fd,int id);
+// extern int id();
+
+
 
 #endif

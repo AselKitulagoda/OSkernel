@@ -148,77 +148,34 @@ void nice( int pid, int x ) {
   return;
 }
 
-int chanWrite(int fd,int x,int phid){
-    int r;
-  asm volatile( "mov r0, %2 \n" // assign r0 =  pid
-                "mov r1, %3 \n" // assign r1 =    x
-                "mov r2, %4 \n" // assign r1 =    x
-                "svc %1     \n" // make system call SYS_KILL
-                "mov %0, r0 \n" // assign r0 =    r
-              : "=r" (r) 
-              : "I" (SYS_CHWRITE), "r" (fd), "r" (x), "r" (phid)
-              : "r0", "r1", "r2" );
-
-  return r;
+void sem_init(sem_t* s){
+    *s=1;
+    return;
 }
 
-int chanRead(int fd,int id){
-    int r;
-    asm volatile("mov r0, %2 \n"
-                 "mov r1, %3 \n"
-                 "svc %1 \n"
-                 "mov %0, r0 \n"
-                : "=r" (r)
-                : "I" (SYS_CHREAD), "r" (fd), "r" (id)
-                : "r0", "r1");
-    return r;
-        
+void sem_wait(sem_t* s){
+    asm volatile("mov r0,%1 \n"
+                 "svc %0    \n"
+                 :
+                 :"I" (SYS_SEMWAIT), "r" (s)
+                 :"r0");
+    return;
 }
 
-int pipe (int fd,int block,int process_a,int process_b){
-  int r;
-  asm volatile ("mov r0, %2 \n"
-               "mov r1, %3 \n"
-               "mov r2, %4 \n"
-               "mov r3, %5 \n"
-               "svc %1 \n"
-               "mov %0, r0 \n"
-               : "=r" (r)
-               :"I" (SYS_PIPE),"r" (fd), "r" (block), "r" (process_a), "r" (process_b)
-               :"r0", "r1", "r2", "r3");
-  return r;
-
-
-  
+void sem_post(sem_t* s){
+    asm volatile("mov r0,%1 \n"
+                 "svc %0    \n"
+                 :
+                 :"I" (SYS_SEMPOST), "r" (s)
+                 :"r0");
+    return;
 }
 
-int open(int fd,int id){
-      int r;
-      asm volatile( "mov r0, %2 \n" // assign r0 =  pid
-                "mov r1, %3 \n" // assign r1 =    x
-                "svc %1     \n" // make system call SYS_KILL
-                "mov %0, r0 \n" // assign r0 =    r
-              : "=r" (r) 
-              : "I" (SYS_OPEN), "r" (fd), "r" (id)
-              : "r0", "r1" );
-    return r;
-}
-
-void close(int fd,int id){
-      asm volatile( "mov r0, %1 \n" // assign r0 =  pid
-                "mov r1, %2 \n" // assign r1 =    x
-                "svc %0     \n" // make system call SYS_KILL
-              :
-              : "I" (SYS_CLOSE), "r" (fd), "r" (id)
-              : "r0", "r1" );
-}
-
-int id(){
-    int r;
-    asm volatile("svc %1  \n"
-                 "mov %0, r0 \n"
-                 : "=r" (r)
-                 : "I" (SYS_ID)
-                 : "r0");
-    return r;
+void sem_destroy(sem_t* s){
+    asm volatile("mov r0,%1 \n"
+                 "svc %0    \n"
+                 :
+                 :"I" (SYS_SEMDESTROY), "r" (s)
+                 :"r0");
+    return;
 }

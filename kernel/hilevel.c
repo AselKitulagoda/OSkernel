@@ -11,9 +11,18 @@
 
 //Coursework
 
+typedef int sem_t;
+
+typedef struct {
+    int pid;
+    sem_t* mutex;
+} waitlist;
+
+waitlist wlist[1000];
+
 
 pcb_t pcb[ 1000 ]; pcb_t* current = NULL;pcb_t* prev = NULL;pcb_t* next = NULL;
-int processesRunning=0; uint32_t toTos[1000]; int currentlyExecuting=0;
+int processesRunning=0; uint32_t toTos[1000]; int currentlyExecuting=0;int count = 0;
 channel channels[16];
 
 void put_i(int r){
@@ -26,6 +35,7 @@ void put_i(int r){
         PL011_putc(UART0, (r-10) + '0', true);
     }
 }
+
 
 
 
@@ -237,6 +247,16 @@ void hilevel_handler_rst(ctx_t* ctx) {
   return;
 }
 
+void FindAvailable(){
+    for (int i=0;i<count;i++){
+        if (*(wlist[i].mutex) ==  1 ){
+            pcb[wlist[i].pid].status = STATUS_READY;
+            wlist[i].pid = -1;
+            wlist[i].mutex = NULL;
+        }
+    }
+}
+
 void hilevel_handler_irq(ctx_t* ctx) {
   // Step 2: read  the interrupt identifier so we know the source.
 
@@ -245,7 +265,9 @@ void hilevel_handler_irq(ctx_t* ctx) {
   // Step 4: handle the interrupt, then clear (or reset) the source.
 
   if( id == GIC_SOURCE_TIMER0 ) {
+      //check wait list here
 //       PL011_putc( UART0, 'T', true );
+    FindAvailable();
     schedule(ctx);
      TIMER0->Timer1IntClr = 0x01;
   }
@@ -263,6 +285,9 @@ void print(char* str){
         PL011_putc(UART0,str[i],true);
     }
 }
+
+//check through queue to see if semaphore value changed and if its 1 then remove from list 
+//
 
 
 
@@ -335,79 +360,109 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
         pcb[id].status = STATUS_TERMINATED;
       }
           
+//       case 0x08:{
+//           print("CHWRITE");
+//           int fd = ctx->gpr[0];
+//           int x = ctx->gpr[1];
+//           int id = ctx->gpr[2];
+//           if (channels[fd].lastwrite == id){
+//               ctx->gpr[0]= -1;
+//           }
+//           else {
+//               channels[fd].lastwrite = id;
+//               channels[fd].data = x;
+//               ctx->gpr[0] = 0;
+//           }
+//           break;
+//       }
+//       case 0x09:{
+//           print("CHREAD");
+//           int fd = ctx->gpr[0];
+//           int id = ctx->gpr[1];
+//           int x = 0;
+//           if (channels[fd].lastwrite == id){
+//               x=0;
+//           }
+//           else {
+//              x = channels[fd].data;
+//              channels[fd].data = 0;
+//           }
+//           ctx->gpr[0]=x;
+//           break;
+//       }
+//       case 0x10:{
+//           print("PIPE");
+//           int fd = ctx->gpr[0];
+//           int block = ctx->gpr[1];
+//           int process_a = ctx->gpr[2];
+//           int process_b = ctx->gpr[3];
+//           channels[fd].process_a = process_a;
+//           channels[fd].process_b = process_b;
+//           channels[fd].data = 0;
+//           channels[fd].channelID = fd+1;
+//           channels[fd].lastwrite = -1;
+//           ctx->gpr[0] = fd;
+//           break;
+//       }
+//       case 0x11:{
+//           print("SYSOPEN");
+//           int fd = ctx->gpr[0];
+//           int id = ctx->gpr[1];
+//           if (channels[fd].process_a == 0){
+//               channels[fd].process_a = id;
+//           }
+//           else {
+//               channels[fd].process_b = id;
+//           }
+//           ctx->gpr[0] = fd;
+//           break;
+//       }
+//       case 0x12:{
+//           print("SYSCLOSE");
+//           int fd = ctx->gpr[0];
+//           int id = ctx->gpr[1];
+//           if (channels[fd].process_a == id){
+//               channels[fd].process_a = 0;
+//           }
+//           else {
+//               channels[fd].process_b = 0;
+//           }
+//           break;
+//       }
+//       case 0x13:{
+//           print("SYSID");
+//           ctx->gpr[0] = currentlyExecuting;
+//           break;
+//       }
       case 0x08:{
-          print("CHWRITE");
-          int fd = ctx->gpr[0];
-          int x = ctx->gpr[1];
-          int id = ctx->gpr[2];
-          if (channels[fd].lastwrite == id){
-              ctx->gpr[0]= -1;
-          }
-          else {
-              channels[fd].lastwrite = id;
-              channels[fd].data = x;
-              ctx->gpr[0] = 0;
-          }
-          break;
+//           int fd = ctx->gpr[0];
+//           sem_t *mutex = 0;
       }
       case 0x09:{
-          print("CHREAD");
-          int fd = ctx->gpr[0];
-          int id = ctx->gpr[1];
-          int x = 0;
-          if (channels[fd].lastwrite == id){
-              x=0;
-          }
-          else {
-             x = channels[fd].data;
-             channels[fd].data = 0;
-          }
-          ctx->gpr[0]=x;
-          break;
+          //if not available change to status wait and add to queue
+         sem_t* mutex = (sem_t*) ctx->gpr[0];
+     if (*mutex ==0){
+         current->status = STATUS_WAITING;
+         for (int i=0; i<count;i++){
+         if (count>0 && (wlist[i].pid == -1)){
+             count = i;
+         }
+         }
+         wlist[count].pid=pcb[processesRunning].pid;
+         wlist[count].mutex = (sem_t*) mutex;
+         count++;  
+
+         
+     }
+      else if (*mutex==1){
+              sem_t* mutex = (sem_t*) ctx->gpr[0];
+          *mutex = 0;
       }
+           }
       case 0x10:{
-          print("PIPE");
-          int fd = ctx->gpr[0];
-          int block = ctx->gpr[1];
-          int process_a = ctx->gpr[2];
-          int process_b = ctx->gpr[3];
-          channels[fd].process_a = process_a;
-          channels[fd].process_b = process_b;
-          channels[fd].data = 0;
-          channels[fd].channelID = fd+1;
-          channels[fd].lastwrite = -1;
-          ctx->gpr[0] = fd;
-          break;
-      }
-      case 0x11:{
-          print("SYSOPEN");
-          int fd = ctx->gpr[0];
-          int id = ctx->gpr[1];
-          if (channels[fd].process_a == 0){
-              channels[fd].process_a = id;
-          }
-          else {
-              channels[fd].process_b = id;
-          }
-          ctx->gpr[0] = fd;
-          break;
-      }
-      case 0x12:{
-          print("SYSCLOSE");
-          int fd = ctx->gpr[0];
-          int id = ctx->gpr[1];
-          if (channels[fd].process_a == id){
-              channels[fd].process_a = 0;
-          }
-          else {
-              channels[fd].process_b = 0;
-          }
-          break;
-      }
-      case 0x13:{
-          print("SYSID");
-          ctx->gpr[0] = currentlyExecuting;
-          break;
+          sem_t* mutex = (sem_t*) ctx->gpr[0];
+          *mutex = 1;
+          
       }
 
     default   : { // 0x?? => unknown/unsupported
