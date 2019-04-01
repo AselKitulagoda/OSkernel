@@ -14,6 +14,19 @@
 
 pcb_t pcb[ 1000 ]; pcb_t* current = NULL;pcb_t* prev = NULL;pcb_t* next = NULL;
 int processesRunning=0; uint32_t toTos[1000]; int currentlyExecuting=0;
+channel channels[16];
+
+void put_i(int r){
+
+    if (r < 10){
+        PL011_putc(UART0, r + '0', true);
+    }
+    else{
+        PL011_putc(UART0, '1', true);
+        PL011_putc(UART0, (r-10) + '0', true);
+    }
+}
+
 
 
 
@@ -99,6 +112,8 @@ extern void     main_P5();
 extern uint32_t tos_P5;
 extern void main_console();
 extern uint32_t tos_console;
+extern void main_factory;
+extern void main_philosopher;
 
 uint32_t findtos(int i){
   uint32_t tos = 0;
@@ -281,7 +296,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       break;
     }
     case 0x03:{
-//       print("FORK");
+      print("FORK");
       processesRunning +=1;
       memset(&pcb[processesRunning],0,sizeof(pcb_t));
       //creates child console
@@ -300,14 +315,14 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
 
     }
       case 0x04:{
-//           print("EXIT");
+          print("EXIT");
           current->status = STATUS_TERMINATED;
           schedule(ctx);
           break;
       }
 
       case 0x05:{
-//         print("EXEC");
+        print("EXEC");
         ctx->pc = ctx->gpr[0];
         ctx->sp = (uint32_t) &tos_console + processesRunning*0x00001000;
 
@@ -315,9 +330,84 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       }
 
       case 0x06:{
-//         print("KILL");
+        print("KILL");
         int id  = ctx->gpr[0];
         pcb[id].status = STATUS_TERMINATED;
+      }
+          
+      case 0x08:{
+          print("CHWRITE");
+          int fd = ctx->gpr[0];
+          int x = ctx->gpr[1];
+          int id = ctx->gpr[2];
+          if (channels[fd].lastwrite == id){
+              ctx->gpr[0]= -1;
+          }
+          else {
+              channels[fd].lastwrite = id;
+              channels[fd].data = x;
+              ctx->gpr[0] = 0;
+          }
+          break;
+      }
+      case 0x09:{
+          print("CHREAD");
+          int fd = ctx->gpr[0];
+          int id = ctx->gpr[1];
+          int x = 0;
+          if (channels[fd].lastwrite == id){
+              x=0;
+          }
+          else {
+             x = channels[fd].data;
+             channels[fd].data = 0;
+          }
+          ctx->gpr[0]=x;
+          break;
+      }
+      case 0x10:{
+          print("PIPE");
+          int fd = ctx->gpr[0];
+          int block = ctx->gpr[1];
+          int process_a = ctx->gpr[2];
+          int process_b = ctx->gpr[3];
+          channels[fd].process_a = process_a;
+          channels[fd].process_b = process_b;
+          channels[fd].data = 0;
+          channels[fd].channelID = fd+1;
+          channels[fd].lastwrite = -1;
+          ctx->gpr[0] = fd;
+          break;
+      }
+      case 0x11:{
+          print("SYSOPEN");
+          int fd = ctx->gpr[0];
+          int id = ctx->gpr[1];
+          if (channels[fd].process_a == 0){
+              channels[fd].process_a = id;
+          }
+          else {
+              channels[fd].process_b = id;
+          }
+          ctx->gpr[0] = fd;
+          break;
+      }
+      case 0x12:{
+          print("SYSCLOSE");
+          int fd = ctx->gpr[0];
+          int id = ctx->gpr[1];
+          if (channels[fd].process_a == id){
+              channels[fd].process_a = 0;
+          }
+          else {
+              channels[fd].process_b = 0;
+          }
+          break;
+      }
+      case 0x13:{
+          print("SYSID");
+          ctx->gpr[0] = currentlyExecuting;
+          break;
       }
 
     default   : { // 0x?? => unknown/unsupported
