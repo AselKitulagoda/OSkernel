@@ -462,6 +462,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       case 0x10:{
           sem_t* mutex = (sem_t*) ctx->gpr[0];
           *mutex = 1;
+//           schedule();
           
       }
 
