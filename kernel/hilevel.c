@@ -95,9 +95,18 @@ void schedule( ctx_t* ctx ) {
 //     }
 //
        int arghighestpri = findmax();
+       while (processesRunning>0 && current->pid==0 && arghighestpri==0){
+             for (int i =0;i<length;i++){
+       if (pcb[i].pid != current->pid){
+           pcb[i].priority+=pcb[i].prioritychange;
+       }
+       }
+           arghighestpri=findmax();
+       }
        dispatch(ctx,current,&pcb[(arghighestpri)]);
        current->status = STATUS_READY;
        currentlyExecuting = arghighestpri;
+       
        pcb[arghighestpri].status=STATUS_EXECUTING;
        current->priority = current->initialpriority;
    for (int i =0;i<length;i++){
