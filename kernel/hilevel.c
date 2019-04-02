@@ -330,7 +330,9 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       pcb[processesRunning].status = STATUS_CREATED;
       pcb[processesRunning].ctx.cpsr = ctx->cpsr;
       pcb[processesRunning].ctx.sp = (uint32_t) &tos_console + processesRunning*0x00001000;
-      setpri(processesRunning);
+      pcb[processesRunning].priority = processesRunning+5;
+      pcb[processesRunning].initialpriority = processesRunning+5;
+      pcb[processesRunning].prioritychange = processesRunning+1;
       uint32_t currentsp = (uint32_t)&tos_console + current->pid*0x00001000;
       memcpy((void *) pcb[processesRunning].ctx.sp - 0x00001000, (void *) currentsp - 0x00001000, 0x00001000);
       pcb[processesRunning].ctx.gpr[0]=0;

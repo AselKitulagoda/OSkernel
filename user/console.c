@@ -96,10 +96,12 @@ void main_console() {
 
     if     ( 0 == strcmp( p, "execute"   ) ) {
       char *program = strtok(NULL, " ");
-      pid_t pid = fork();
+     pid_t pid = fork();
 
       if( 0 == pid ) {
         exec( load( program ) );
+//               exec( load( strtok( NULL, " " ) ) );
+
       }
     } 
     else if( 0 == strcmp( p, "terminate" ) ) {
