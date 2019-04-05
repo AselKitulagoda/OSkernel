@@ -39,7 +39,7 @@ pcb_t pcb[ 1000 ]; pcb_t* current = NULL;pcb_t* prev = NULL;pcb_t* next = NULL;
 int processesRunning=0;  ;int count = 0;int currentlyExecuting=0;
 
 
-void put_i(int r){
+void printi(int r){
 
     if (r < 10){
         PL011_putc(UART0, r + '0', true);
@@ -211,7 +211,7 @@ void FindAvailable(){
     for (int i=0;i<count;i++){
         if (*(wlist[i].mutex) ==  1 ){
             pcb[wlist[i].pid].status = STATUS_READY;
-            wlist[i].pid = -1;
+            wlist[i].pid = -11;
             wlist[i].mutex = NULL;
         }
     }
@@ -331,7 +331,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
      if (*mutex ==0){
          current->status = STATUS_WAITING;
          for (int i=0; i<count;i++){
-         if (count>0 && (wlist[i].pid == -1)){
+         if (count>0 && (wlist[i].pid == -11)){
              count = i;
          }
          }

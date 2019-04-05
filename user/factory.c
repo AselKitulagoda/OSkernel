@@ -3,19 +3,19 @@
 #define noOfPhilo 16
 
 
-extern void put_i();
+extern void printi();
 
 
 void pThinking(int current){
     write(STDOUT_FILENO,"Philosopher ",12);
-    put_i(current);
+    printi(current);
     write(STDOUT_FILENO, " thinking", 9);
     PL011_putc(UART0,'\n',true);
 }
     
 void pEating(int current){
     write(STDOUT_FILENO,"Philosopher ", 12);
-    put_i(current);
+    printi(current);
     write(STDOUT_FILENO," eating",7);
     PL011_putc(UART0,'\n',true);
 }
