@@ -179,3 +179,35 @@ void sem_destroy(sem_t* s){
                  :"r0");
     return;
 }
+
+// void sem_open(){
+//     asm volatile("mov r0,%1 \n"
+//                  "svc %0    \n"
+//                  :
+//                  :"I" (SYS_SEMOPEN), "r" (s)
+//                  :"r0");
+//     return;
+// }
+// 
+
+int  sem_open() {
+  int r;
+
+  asm volatile( "svc %1     \n" // make system call SYS_FORK
+                "mov %0, r0 \n" // assign r  = r0 
+              : "=r" (r) 
+              : "I" (SYS_SEMOPEN)
+              : "r0" );
+
+  return r;
+}
+
+// void sem_close(sem_t* s){
+//     asm volatile("mov r0,%1 \n"
+//                  "svc %0    \n"
+//                  :
+//                  :"I" (SYS_SEMCLOSE), "r" (s)
+//                  :"r0");
+//     return;
+// }
+

@@ -7,6 +7,8 @@
  */
 
 #include "hilevel.h"
+#define noOfPhilo 16
+
 
 
 //Coursework
@@ -21,9 +23,21 @@ typedef struct {
 waitlist wlist[1000];
 
 
+
+sem_t* forks[noOfPhilo+1];
+
+void initialiseForks(){
+    for(int i=0;i<16;i++){
+        forks[i] = (sem_t*) 1;
+    }
+}
+
+
+
+
 pcb_t pcb[ 1000 ]; pcb_t* current = NULL;pcb_t* prev = NULL;pcb_t* next = NULL;
-int processesRunning=0; uint32_t toTos[1000]; int currentlyExecuting=0;int count = 0;
-channel channels[16];
+int processesRunning=0;  ;int count = 0;int currentlyExecuting=0;
+
 
 void put_i(int r){
 
@@ -80,20 +94,25 @@ int findmax(){
 }
 
 
+void roundrobinsched(ctx_t* ctx){
+        int length  = sizeof(pcb)/sizeof(pcb[0]);
+    char test = '0' + length;
+    for (int i=0;i<length;i++){
+        PL011_putc( UART0, test, true );
+        if (current->pid == pcb[i].pid){
+            dispatch(ctx,&pcb[i],&pcb[(i+1)%length]);
+            pcb[i].status = STATUS_READY;
+            pcb[(i+1)%length].status = STATUS_EXECUTING;
+            break;
+        }
+
+    }
+    
+}
+
 void schedule( ctx_t* ctx ) {
     int length  = sizeof(pcb)/sizeof(pcb[0]);
     char test = '0' + length;
-//     for (int i=0;i<length;i++){
-//         PL011_putc( UART0, test, true );
-//         if (current->pid == pcb[i].pid){
-//             dispatch(ctx,&pcb[i],&pcb[(i+1)%length]);
-//             pcb[i].status = STATUS_READY;
-//             pcb[(i+1)%length].status = STATUS_EXECUTING;
-//             break;
-//         }
-//
-//     }
-//
        int arghighestpri = findmax();
        while (processesRunning>0 && current->pid==0 && arghighestpri==0){
              for (int i =0;i<length;i++){
@@ -131,23 +150,10 @@ extern void     main_P5();
 extern uint32_t tos_P5;
 extern void main_console();
 extern uint32_t tos_console;
-extern void main_factory;
-extern void main_philosopher;
+extern void main_sem();
+extern uint32_t tos_smem;
 
-uint32_t findtos(int i){
-  uint32_t tos = 0;
-  if (i==2){
-    tos = (uint32_t)&tos_P4;
-  }
-  else if (i==3){
-    tos = (uint32_t)&tos_P5;
-  }
-  else if (i==1){
-    tos = (uint32_t)&tos_P3;
-  }
-  toTos[i]=tos;
-  return tos;
-}
+
 
 void setpri(int i){
 int priorities[] = {1,5,10};
@@ -166,28 +172,6 @@ void hilevel_handler_rst(ctx_t* ctx) {
    * - enabling IRQ interrupts.
    */
 
-//   for (int i=0;i<sizeof(pcb_t);i++){
-//       memset(&pcb[i],i,sizeof(pcb_t));
-//       pcb[i].pid = i+3;
-//       pcb[i].status = STATUS_CREATED;
-//       pcb[i].ctx.cpsr=0x50;
-//       if (i == 0){
-//       pcb[i].ctx.pc= (uint32_t)(&main_P3);
-//       pcb[i].ctx.sp=(uint32_t)(&tos_P3);
-
-//       }
-//       if (i == 1){
-//       pcb[i].ctx.pc= (uint32_t)(&main_P4);
-//       pcb[i].ctx.sp=(uint32_t)(&tos_P4);
-//     }
-//        if (i == 2){
-//       pcb[i].ctx.pc= (uint32_t)(&main_P5);
-//       pcb[i].ctx.sp=(uint32_t)(&tos_P5);
-//       dispatch(ctx,NULL,&pcb[0]);
-//       }
-//   }
-//
-//
   PL011_putc(UART0,'R',true);
   memset( &pcb[ 0 ], 0, sizeof( pcb_t ) );     // initialise 0-th PCB = P_1
   pcb[ 0 ].pid      = 0;
@@ -198,39 +182,6 @@ void hilevel_handler_rst(ctx_t* ctx) {
   pcb[ 0 ].initialpriority = 40;
   pcb[0].prioritychange = 5;
   pcb[ 0 ].ctx.sp   = ( uint32_t )( &tos_console  );
-
-//   toTos[0] = (uint32_t)&tos_console;
-
-//   memset( &pcb[ 1 ], 0, sizeof( pcb_t ) );     // initialise 1-st PCB = P_2
-//   pcb[ 1 ].pid      = 4;
-//   pcb[ 1 ].status   = STATUS_CREATED;
-//   pcb[ 1 ].ctx.cpsr = 0x50;
-//   pcb[ 1 ].ctx.pc   = ( uint32_t )( &main_P4 );
-//   pcb[1].priority = 20;
-//   pcb[1].initialpriority = 20;
-//   pcb[1].prioritychange = 10;
-//   pcb[ 1 ].ctx.sp   = ( uint32_t )( &tos_P4  );
-
-//    memset( &pcb[ 2 ], 0, sizeof( pcb_t ) );     // initialise 1-st PCB = P_2
-//   pcb[ 2 ].pid      = 5;
-//   pcb[ 2 ].status   = STATUS_CREATED;
-//   pcb[ 2 ].ctx.cpsr = 0x50;
-//   pcb[ 2 ].ctx.pc   = ( uint32_t )( &main_P5 );
-//   pcb[2].priority = 30;
-//   pcb[2].initialpriority = 30;
-//   pcb[2].prioritychange = 1;
-//   pcb[ 2 ].ctx.sp   = ( uint32_t )( &tos_P5  );
-
-//   pcb[ 2 ].pid      = 5;
-//   pcb[ 2 ].status   = STATUS_CREATED;
-//   pcb[ 2 ].ctx.cpsr = 0x50;
-//   pcb[ 2 ].ctx.pc   = ( uint32_t )( &main_console );
-//   pcb[2].priority = 30;
-//   pcb[2].initialpriority = 30;
-//   pcb[0].prioritychange = 1;
-//   pcb[ 2 ].ctx.sp   = ( uint32_t )( &tos_console  );
-
-
 
 
   TIMER0->Timer1Load  = 0x00100000; // select period = 2^20 ticks ~= 1 sec
@@ -295,8 +246,7 @@ void print(char* str){
     }
 }
 
-//check through queue to see if semaphore value changed and if its 1 then remove from list 
-//
+
 
 
 
@@ -476,6 +426,17 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
 //           schedule();
           
       }
+      case 0x12:{
+           initialiseForks();
+           ctx->gpr[0] =(uint32_t) forks;
+                                  
+          
+     
+      }
+      case 0x13:{
+          forks[noOfPhilo] = (sem_t*) ctx->gpr[0];
+      }
+        
 
     default   : { // 0x?? => unknown/unsupported
       break;

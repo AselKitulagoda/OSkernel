@@ -33,4 +33,6 @@ SECTIONS {
   tos_P5  = .;
       .       = . + 0x00001000;  
   tos_console  = .;
+        .       = . + 0x00001000;  
+  tos_smem  = .;
 }

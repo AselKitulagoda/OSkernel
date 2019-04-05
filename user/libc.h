@@ -43,6 +43,8 @@ typedef int pid_t;
 #define SYS_SEMWAIT   (0x09)
 #define SYS_SEMPOST    (0x10)
 #define SYS_SEMDESTROY (0x11)
+#define SYS_SEMOPEN (0x12)
+#define SYS_SEMCLOSE (0x13)
 
 #define SIG_TERM      ( 0x00 )
 #define SIG_QUIT      ( 0x01 )
@@ -86,6 +88,8 @@ extern void sem_init(sem_t* s);
 extern void sem_wait(sem_t *s);
 extern void sem_post(sem_t *s);
 extern void sem_destroy(sem_t *s);
+extern int sem_open();
+extern void sem_close(sem_t *s);
 
 
 // extern int chanWrite(int fd,int x,int phid);
