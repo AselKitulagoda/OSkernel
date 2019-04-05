@@ -180,15 +180,6 @@ void sem_destroy(sem_t* s){
     return;
 }
 
-// void sem_open(){
-//     asm volatile("mov r0,%1 \n"
-//                  "svc %0    \n"
-//                  :
-//                  :"I" (SYS_SEMOPEN), "r" (s)
-//                  :"r0");
-//     return;
-// }
-// 
 
 int  sem_open() {
   int r;
@@ -202,12 +193,12 @@ int  sem_open() {
   return r;
 }
 
-// void sem_close(sem_t* s){
-//     asm volatile("mov r0,%1 \n"
-//                  "svc %0    \n"
-//                  :
-//                  :"I" (SYS_SEMCLOSE), "r" (s)
-//                  :"r0");
-//     return;
-// }
+void sem_close(sem_t* s){
+    asm volatile("mov r0,%1 \n"
+                 "svc %0    \n"
+                 :
+                 :"I" (SYS_SEMCLOSE), "r" (s)
+                 :"r0");
+    return;
+}
 

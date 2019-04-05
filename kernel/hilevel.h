@@ -50,12 +50,3 @@ typedef struct {
     int prioritychange;
      ctx_t    ctx;
 } pcb_t;
-
-typedef struct {
-    pid_t process_a;
-    pid_t process_b;
-    int channelID;
-    int lastwrite;
-    int data;
-
-} channel;

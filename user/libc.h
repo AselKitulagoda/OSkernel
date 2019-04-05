@@ -92,12 +92,6 @@ extern int sem_open();
 extern void sem_close(sem_t *s);
 
 
-// extern int chanWrite(int fd,int x,int phid);
-// extern int chanRead (int fd,int id);
-// extern int pipe (int fd,int block,int pid_a, int pid_b);
-// extern int open(int fd,int id);
-// extern int id();
-
 
 
 #endif

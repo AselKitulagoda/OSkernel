@@ -3,10 +3,6 @@
 #define noOfPhilo 16
 
 
-// sem_t* forks[noOfPhilo+1];
-
-
-
 extern void put_i();
 
 
