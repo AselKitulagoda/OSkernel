@@ -22,6 +22,9 @@ typedef struct {
 
 waitlist wlist[1000];
 
+int proRun = 0;
+
+
 
 
 sem_t* forks[noOfPhilo+1];
@@ -114,7 +117,7 @@ void schedule( ctx_t* ctx ) {
     int length  = sizeof(pcb)/sizeof(pcb[0]);
     char test = '0' + length;
        int arghighestpri = findmax();
-       while (processesRunning>0 && current->pid==0 && arghighestpri==0){
+       while (proRun>0 && current->pid==0 && arghighestpri==0){
              for (int i =0;i<length;i++){
        if (pcb[i].pid != current->pid){
            pcb[i].priority+=pcb[i].prioritychange;
@@ -211,7 +214,7 @@ void FindAvailable(){
     for (int i=0;i<count;i++){
         if (*(wlist[i].mutex) ==  1 ){
             pcb[wlist[i].pid].status = STATUS_READY;
-            wlist[i].pid = -11;
+            wlist[i].pid = -1;
             wlist[i].mutex = NULL;
         }
     }
@@ -281,7 +284,16 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     }
     case 0x03:{
       print("FORK");
+//       while (pcb[processesRunning+1].status == STATUS_EXECUTING || pcb[processesRunning+1].status == STATUS_WAITING){
+//       }
       processesRunning +=1;
+      proRun +=1;
+      for (int i = 0; i<processesRunning;i++){
+          if (pcb[i].status == STATUS_TERMINATED){
+              processesRunning = i; 
+          }
+      }
+
       memset(&pcb[processesRunning],0,sizeof(pcb_t));
       //creates child console
       memcpy(&pcb[processesRunning].ctx,ctx,sizeof(ctx_t));
@@ -303,6 +315,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       case 0x04:{
           print("EXIT");
           current->status = STATUS_TERMINATED;
+          proRun -=1;
           schedule(ctx);
           break;
       }
@@ -319,6 +332,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
         print("KILL");
         int id  = ctx->gpr[0];
         pcb[id].status = STATUS_TERMINATED;
+        proRun -=1;
       }
           
       case 0x08:{
@@ -331,7 +345,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
      if (*mutex ==0){
          current->status = STATUS_WAITING;
          for (int i=0; i<count;i++){
-         if (count>0 && (wlist[i].pid == -11)){
+         if (count>0 && (wlist[i].pid == -1)){
              count = i;
          }
          }
