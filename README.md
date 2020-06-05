@@ -9,27 +9,12 @@
 
 As is, the console only recognises the following commands:
  *
- * a. execute <program name>
- *
- *    This command will use fork to create a new process; the parent
- *    (i.e., the console) will continue as normal, whereas the child
- *    uses exec to replace the process image and thereby execute a
- *    different (named) program.  For example,
- *    
- *    execute P3
- *
- *    would execute the user program named P3.
- *
- * b. terminate <process ID> 
- *
- *    This command uses kill to send a terminate or SIG_TERM signal
- *    to a specific process (identified via the PID provided); this
- *    acts to forcibly terminate the process, vs. say that process
- *    using exit to terminate itself.  For example,
- *  
- *    terminate 3
- *
- *    would terminate the process whose PID is 3.
+ * a. execute &lt;```program name```&gt;
+    * This command will use fork to create a new process; the parent (i.e., the console) will continue as normal, whereas the child uses exec to replace the process image and thereby execute a different (named) program.  For example,
+      * ```execute P3``` - would execute the user program named P3.
+ * terminate &lt;```process ID```&gt;
+    * This command uses kill to send a terminate or SIG_TERM signalto a specific process (identified via the PID provided); this acts to forcibly terminate the process, vs. say that processusing exit to terminate itself.  For example,
+        * ```terminate 3``` - would terminate the process whose PID is 3. 
 
 ### Feature points
 * The kernel is able to dynamically instantiate processes which can be specified as a file such as [P4.c](kernel/P4.c) which specifies a program to run. The kernel dynamically shifts between the processes through maximising runtime for high priority tasks and adopts queue based approach for managing processes.
